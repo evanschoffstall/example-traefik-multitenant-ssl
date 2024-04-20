@@ -1,0 +1,7 @@
+.env
+
+*.crt
+*.key
+
+/data/postgres/*
+/data/pgadmin/*

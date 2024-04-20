@@ -1,0 +1,84 @@
+version: '3.8'
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    command:
+      - --log.level=info
+      - --accesslog=false
+      - --api.insecure=false
+      - --api.dashboard=true
+      # Enable docker provider to load and watch for changes in docker containers
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      # Enable file provider to load and watch for changes in folder
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      # HTTP to HTTPS global redirection via traefik entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+    ports:
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Mount the docker socket as read-only for security
+      - ./data/traefik/localhost.crt:/certs/localhost.crt:ro # Load SSL certificate as read-only for security
+      - ./data/traefik/localhost.key:/certs/localhost.key:ro # Load SSL certificate key as read-only for security
+      - ./data/traefik/dynamic.yaml:/etc/traefik/dynamic/dynamic.yaml:ro # Load dynamic configuration which points to SSL certificate as a default certificate store as read-only for security
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=default"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.middlewares.auth.basicauth.users=${BASIC_AUTH_USERS}"
+      - "traefik.http.routers.traefik.middlewares=auth"
+      - "traefik.http.services.traefik.loadbalancer.server.port=80"
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    depends_on:
+      - traefik
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgres/:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: '${POSTGRES_USER}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+      POSTGRES_DB: '${POSTGRES_DB}'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - psql -U postgres -d testing
+      interval: 10s
+      timeout: 10s
+      retries: 50
+      start_period: 30s
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: '${PGADMIN_DEFAULT_EMAIL}'
+      PGADMIN_DEFAULT_PASSWORD: '${PGADMIN_DEFAULT_PASSWORD}'
+      # If you want pgadmin to be on a subpath, use SCRIPT_NAME
+      # SCRIPT_NAME: /_admin/pgadmin
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pgadmin.entrypoints=websecure
+      - traefik.http.routers.pgadmin.tls=true
+      - traefik.http.routers.pgadmin.rule=Host(`pgadmin.localhost`)
+      - traefik.http.routers.pgadmin.service=pgadmin
+      - traefik.http.services.pgadmin.loadbalancer.server.port=80
