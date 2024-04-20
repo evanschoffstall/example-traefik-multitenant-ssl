@@ -8,8 +8,6 @@ As of writing as far as I know, there are no existing examples covering pgadmin 
 
 > What's better for security are secure tunnels like Cloudfare that securely access private network resources authenticated on a whitelisted and regulated client to client basis and even temporary ip whitelisting using port knocking as part of a larger comprehensive security strategy.
 
----
-
 ## Building the Example
 
 ### Requirements
@@ -30,8 +28,6 @@ You can build and run the project by running the provided script:
 This will also already generate a `.crt` and `.key` for localhost that gets copied, pointed to and served by Traefik.
 
 This example is for development purposes and not production, as there are several security considerations to address.
-
----
 
 ## Repurposing to Your Project
 
