@@ -1,8 +1,8 @@
 # Example: Cloud Native Traefik Serving Multi Tenant HTTPS
 
-This repository provides an example of serving multi tenant services such as pgAdmin and Traefik dashboards over HTTPS/SSL using Traefik. 
+This repository offers a practical example of deploying multi-tenant services like pgAdmin and Traefik dashboards through SSL using Traefik. 
 
-As of writing as far as I know, there are no existing examples covering pgadmin over Traefik SSL/HTTPS and few currently working that cover SSL/HTTPS using Traefik.
+To the best of my knowledge, at the time of writing, there are no existing examples specifically addressing pgAdmin integration with Traefik over SSL, and only a limited number of examples exist that demonstrate the use of SSL with Traefik.
 
 > :warning: **Security Warning:** Administrative dashboards are are not best to serve publicly over the open internet even with SSL and good passwords.
 
